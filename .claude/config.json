@@ -1,0 +1,5 @@
+{
+  "preferredLanguage": "zh-CN",
+  "autoExecuteApprovedCommands": false,
+  "fileIgnorePatterns": ["**/dist/**", "**/node_modules/**", "**/.git/**"]
+}
