@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Plus, Search, TrendingUp, FolderPlus, X, ArrowLeft, RefreshCw } from 'lucide-react'
+import { PageContainer } from '@/components/PageContainer'
 
 export function FundList() {
   const navigate = useNavigate()
@@ -19,7 +20,12 @@ export function FundList() {
   const { groups, loadGroups, addGroup, deleteGroup } = useGroupStore()
 
   // 批量获取基金估值
-  const { data: fundEstimates, refreshAll, isLoading: isEstimatesLoading } = useFundEstimates(funds)
+  const {
+    data: fundEstimates,
+    refreshAll,
+    isLoading: isEstimatesLoading,
+    isError: isEstimatesError,
+  } = useFundEstimates(funds)
 
   // 搜索弹窗状态
   const [searchOpen, setSearchOpen] = useState(false)
@@ -104,7 +110,7 @@ export function FundList() {
         : fundEstimates.filter((fe) => fe.fund.groupId === selectedGroupId)
 
   return (
-    <div className="container mx-auto px-4 py-6 max-w-5xl">
+    <PageContainer>
       {/* 页面标题 */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
@@ -112,8 +118,8 @@ export function FundList() {
             <ArrowLeft className="size-5" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold">我的基金</h1>
-            <p className="text-muted-foreground text-sm mt-1">管理持仓基金，实时查看估值与收益</p>
+            <h1 className="text-2xl font-bold text-gradient">我的基金</h1>
+            <p className="text-muted-foreground text-xs mt-0.5">管理持仓基金，实时查看估值与收益</p>
           </div>
         </div>
         <div className="flex gap-2">
@@ -208,6 +214,19 @@ export function FundList() {
         )}
       </div>
 
+      {/* 估值 API 错误提示 */}
+      {isEstimatesError && funds.length > 0 && (
+        <div className="mb-4 p-3 rounded-lg bg-destructive/10 border border-destructive/20 flex items-center justify-between">
+          <span className="text-destructive text-sm">
+            ⚠️ 实时估值获取失败，显示的是本地缓存数据
+          </span>
+          <Button variant="ghost" size="sm" onClick={() => refreshAll()}>
+            <RefreshCw className="size-3.5 mr-1" />
+            重试
+          </Button>
+        </div>
+      )}
+
       {/* 基金列表 */}
       {isLoading ? (
         <div className="text-center py-20 text-muted-foreground">
@@ -265,6 +284,6 @@ export function FundList() {
         editingFund={editingFund}
         onSave={handleSave}
       />
-    </div>
+    </PageContainer>
   )
 }

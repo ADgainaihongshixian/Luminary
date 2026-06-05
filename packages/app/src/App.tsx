@@ -1,8 +1,11 @@
 import { lazy, Suspense } from 'react'
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom'
+import { AnimatePresence, motion } from 'framer-motion'
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { AppLayout } from '@/components/layout/AppLayout'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
+import { PageContainer } from '@/components/PageContainer'
 import { useMetalPrices } from '@/hooks/useMetalPrices'
 import { useFundEstimates } from '@/hooks/useFundEstimates'
 import { useAlertChecker } from '@/hooks/useAlertChecker'
@@ -11,20 +14,8 @@ import { useFundStore } from '@/store/useFundStore'
 import { useEffect, useState, useCallback } from 'react'
 import { METALS } from '@fund-monitor/shared'
 import type { MetalSymbol } from '@fund-monitor/shared'
-import {
-  TrendingUp,
-  Gem,
-  Bell,
-  Plus,
-  ChevronRight,
-  RefreshCw,
-  Moon,
-  Sun,
-  Monitor,
-  Settings as SettingsIcon,
-} from 'lucide-react'
+import { TrendingUp, Gem, Bell, Plus, ChevronRight, RefreshCw } from 'lucide-react'
 import { MetalIcon } from '@/components/MetalIcon'
-import { useTheme } from '@/hooks/useTheme'
 
 // 路由懒加载
 const FundList = lazy(() => import('@/pages/Funds/FundList').then((m) => ({ default: m.FundList })))
@@ -293,22 +284,6 @@ function AlertStatus() {
   )
 }
 
-/** 主题切换快捷按钮 */
-function ThemeToggle() {
-  const { theme, setTheme } = useTheme()
-  const cycleTheme = () => {
-    setTheme(theme === 'dark' ? 'light' : theme === 'light' ? 'system' : 'dark')
-  }
-  const Icon = theme === 'dark' ? Moon : theme === 'light' ? Sun : Monitor
-  const label = theme === 'dark' ? '暗色' : theme === 'light' ? '亮色' : '跟随系统'
-
-  return (
-    <Button variant="ghost" size="icon" onClick={cycleTheme} title={`当前：${label}，点击切换`}>
-      <Icon className="size-4" />
-    </Button>
-  )
-}
-
 /** 手动刷新按钮 */
 function RefreshButton() {
   const queryClient = useQueryClient()
@@ -340,22 +315,14 @@ function Dashboard() {
   useAlertChecker()
 
   return (
-    <div className="container mx-auto px-4 py-6 max-w-5xl">
-      {/* 顶部栏：Logo + 操作按钮 */}
+    <PageContainer>
+      {/* 页面标题 */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gradient">流光</h1>
-          <p className="text-muted-foreground text-xs mt-0.5">基金 & 贵金属实时监控平台</p>
+          <h1 className="text-2xl font-bold text-gradient">Dashboard</h1>
+          <p className="text-muted-foreground text-xs mt-0.5">资产总览</p>
         </div>
-        <div className="flex items-center gap-1">
-          <RefreshButton />
-          <ThemeToggle />
-          <Link to="/settings">
-            <Button variant="ghost" size="icon" title="设置">
-              <SettingsIcon className="size-4" />
-            </Button>
-          </Link>
-        </div>
+        <RefreshButton />
       </div>
 
       {/* 资产总览 */}
@@ -396,7 +363,34 @@ function Dashboard() {
           </Button>
         </Link>
       </div>
-    </div>
+    </PageContainer>
+  )
+}
+
+/** 带页面切换动效的路由容器 */
+function AnimatedRoutes() {
+  const location = useLocation()
+
+  return (
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={location.pathname}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.1 }}
+      >
+        <Routes location={location}>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/funds" element={<FundList />} />
+          <Route path="/funds/:code" element={<FundDetail />} />
+          <Route path="/metals" element={<MetalList />} />
+          <Route path="/metals/:symbol" element={<MetalDetail />} />
+          <Route path="/alerts" element={<AlertList />} />
+          <Route path="/settings" element={<Settings />} />
+        </Routes>
+      </motion.div>
+    </AnimatePresence>
   )
 }
 
@@ -405,17 +399,11 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <AppLayout>
-          <Suspense fallback={<PageSkeleton />}>
-            <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/funds" element={<FundList />} />
-              <Route path="/funds/:code" element={<FundDetail />} />
-              <Route path="/metals" element={<MetalList />} />
-              <Route path="/metals/:symbol" element={<MetalDetail />} />
-              <Route path="/alerts" element={<AlertList />} />
-              <Route path="/settings" element={<Settings />} />
-            </Routes>
-          </Suspense>
+          <ErrorBoundary>
+            <Suspense fallback={<PageSkeleton />}>
+              <AnimatedRoutes />
+            </Suspense>
+          </ErrorBoundary>
         </AppLayout>
       </BrowserRouter>
     </QueryClientProvider>

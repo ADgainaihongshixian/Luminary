@@ -20,6 +20,7 @@ import { Progress } from '@/components/ui/progress'
 import { ArrowLeft, TrendingUp, TrendingDown, Calculator } from 'lucide-react'
 import { useColorScheme } from '@/hooks/useColorScheme'
 import { Input } from '@/components/ui/input'
+import { PageContainer } from '@/components/PageContainer'
 
 const TIME_RANGES = [
   { label: '1天', value: '1D' },
@@ -93,14 +94,14 @@ export function MetalDetail() {
   const rangeLabel = TIME_RANGES.find((r) => r.value === range)?.label ?? range
 
   return (
-    <div className="container mx-auto px-4 py-6 max-w-5xl">
+    <PageContainer>
       {/* 顶部导航 */}
       <div className="flex items-center gap-3 mb-6">
         <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
           <ArrowLeft className="size-5" />
         </Button>
         <div>
-          <h1 className="text-xl font-bold">
+          <h1 className="text-xl font-bold text-gradient">
             {metalInfo.name} ({metalInfo.symbol})
           </h1>
           <span className="text-muted-foreground text-xs">
@@ -274,6 +275,6 @@ export function MetalDetail() {
           汇率: 1 USD = {usdCnyRate.toFixed(4)} CNY · 1 金衡盎司 = 31.1035 克
         </p>
       </div>
-    </div>
+    </PageContainer>
   )
 }

@@ -37,6 +37,9 @@ export interface MetalPriceData {
   symbol: string
   price: number // USD/oz
   cnyPricePerGram: number // CNY/g
+  open: number // 今日开盘
+  high: number // 今日最高
+  low: number // 今日最低
   prevClose: number
   change: number
   changePercent: number
@@ -129,6 +132,9 @@ async function fetchGoldApiPrice(symbol: string): Promise<MetalPriceData | null>
         Number.isFinite(data.price) && Number.isFinite(rate)
           ? +((data.price / TROY_OZ_TO_GRAM) * rate).toFixed(2)
           : 0,
+      open: data.price, // gold-api 不提供 OHLC，用当前价兜底
+      high: data.price,
+      low: data.price,
       prevClose,
       change,
       changePercent,
@@ -166,6 +172,9 @@ export async function getMetalPrices(symbols: string[]): Promise<MetalPriceData[
       cnyPricePerGram: Number.isFinite(rate)
         ? +((sp.price / TROY_OZ_TO_GRAM) * rate).toFixed(2)
         : 0,
+      open: sp.open,
+      high: sp.high,
+      low: sp.low,
       prevClose,
       change,
       changePercent,

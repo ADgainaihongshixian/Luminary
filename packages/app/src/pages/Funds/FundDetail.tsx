@@ -16,6 +16,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Skeleton } from '@/components/ui/skeleton'
+import { PageContainer } from '@/components/PageContainer'
 import { ArrowLeft, TrendingUp, TrendingDown } from 'lucide-react'
 
 const TIME_RANGES = [
@@ -56,14 +57,16 @@ export function FundDetail() {
   }, [code, range])
 
   return (
-    <div className="container mx-auto px-4 py-6 max-w-5xl">
+    <PageContainer>
       {/* 顶部导航 */}
       <div className="flex items-center gap-3 mb-6">
         <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
           <ArrowLeft className="size-5" />
         </Button>
         <div>
-          <h1 className="text-xl font-bold">{fundInfo?.name ?? code ?? '基金详情'}</h1>
+          <h1 className="text-xl font-bold text-gradient">
+            {fundInfo?.name ?? code ?? '基金详情'}
+          </h1>
           <div className="flex items-center gap-2 mt-0.5">
             <span className="text-muted-foreground text-xs font-mono">{code}</span>
             {fundInfo && (
@@ -143,6 +146,6 @@ export function FundDetail() {
           <div className="text-center py-8 text-muted-foreground text-sm">暂无数据</div>
         )}
       </div>
-    </div>
+    </PageContainer>
   )
 }

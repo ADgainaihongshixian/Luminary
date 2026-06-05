@@ -77,6 +77,9 @@ export function FundNavChart({ data, height = 300 }: FundNavChartProps) {
               { offset: 1, color: 'rgba(124, 58, 237, 0.02)' },
             ]),
           },
+          animationDuration: 1500,
+          animationEasing: 'cubicOut' as const,
+          animationDelay: (idx: number) => idx * 5,
         },
       ],
       dataZoom: [

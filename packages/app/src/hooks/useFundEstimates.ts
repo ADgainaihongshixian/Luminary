@@ -25,6 +25,8 @@ export function useFundEstimates(funds: PortfolioFund[]) {
   }, [queryClient])
 
   const isAnyLoading = queries.some((q) => q.isLoading)
+  const isAnyError = queries.some((q) => q.isError)
+  const firstError = queries.find((q) => q.isError)?.error ?? null
 
   return {
     data: funds.map((fund, i) => ({
@@ -34,5 +36,7 @@ export function useFundEstimates(funds: PortfolioFund[]) {
     })),
     refreshAll,
     isLoading: isAnyLoading,
+    isError: isAnyError,
+    error: firstError,
   }
 }

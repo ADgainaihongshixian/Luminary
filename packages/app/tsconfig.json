@@ -1,7 +1,6 @@
 {
   "extends": "@fund-monitor/tsconfig/react.json",
   "compilerOptions": {
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
     }

@@ -3,6 +3,8 @@ import { METALS } from '@fund-monitor/shared'
 import { Card, CardContent } from '@/components/ui/card'
 import { TrendingUp, TrendingDown, Clock } from 'lucide-react'
 import { MetalIcon } from '@/components/MetalIcon'
+import { NumberRoller } from '@/components/motion/NumberRoller'
+import { PriceFlash } from '@/components/motion/PriceFlash'
 
 interface MetalCardProps {
   price: MetalPrice
@@ -38,14 +40,20 @@ export function MetalCard({ price, onClick }: MetalCardProps) {
           {/* 美元价格 */}
           <div>
             <div className="text-muted-foreground text-xs mb-1">美元价格 (USD/oz)</div>
-            <div className="font-mono text-xl font-bold">${price.price.toFixed(2)}</div>
+            <PriceFlash value={price.price}>
+              <div className="font-mono text-xl font-bold">
+                <NumberRoller value={price.price} decimals={2} prefix="$" />
+              </div>
+            </PriceFlash>
           </div>
           {/* 人民币克价 */}
           <div>
             <div className="text-muted-foreground text-xs mb-1">人民币克价 (CNY/g)</div>
-            <div className="font-mono text-xl font-bold text-primary">
-              ¥{price.cnyPricePerGram.toFixed(2)}
-            </div>
+            <PriceFlash value={price.cnyPricePerGram}>
+              <div className="font-mono text-xl font-bold text-primary">
+                <NumberRoller value={price.cnyPricePerGram} decimals={2} prefix="¥" />
+              </div>
+            </PriceFlash>
           </div>
         </div>
 
@@ -60,9 +68,13 @@ export function MetalCard({ price, onClick }: MetalCardProps) {
               className={`flex items-center gap-1 font-mono text-sm font-medium ${isUp ? 'text-up' : 'text-down'}`}
             >
               {isUp ? <TrendingUp className="size-3.5" /> : <TrendingDown className="size-3.5" />}
-              {isUp ? '+' : ''}
-              {price.change.toFixed(2)} ({isUp ? '+' : ''}
-              {safeChangePct.toFixed(2)}%)
+              <NumberRoller
+                value={price.change}
+                decimals={2}
+                prefix={isUp ? '+' : ''}
+                suffix={isUp ? '+' : ''}
+              />
+              <NumberRoller className="ms-auto" value={safeChangePct} decimals={2} suffix="%" />
             </div>
           </div>
           {/* 较开盘 */}
@@ -76,9 +88,13 @@ export function MetalCard({ price, onClick }: MetalCardProps) {
               ) : (
                 <TrendingDown className="size-3.5" />
               )}
-              {isDayUp ? '+' : ''}
-              {price.dayChange.toFixed(2)} ({isDayUp ? '+' : ''}
-              {safeDayChangePct.toFixed(2)}%)
+              <NumberRoller
+                value={price.dayChange}
+                decimals={2}
+                prefix={isDayUp ? '+' : ''}
+                suffix={isDayUp ? '+' : ''}
+              />
+              <NumberRoller className="ms-auto" value={safeDayChangePct} decimals={2} suffix="%" />
             </div>
           </div>
         </div>

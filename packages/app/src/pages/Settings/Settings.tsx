@@ -9,6 +9,7 @@ import { useApiConfigStore } from '@/store/useApiConfigStore'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
+import { PageContainer } from '@/components/PageContainer'
 import {
   Download,
   Upload,
@@ -87,12 +88,12 @@ export function Settings() {
   const navigate = useNavigate()
 
   return (
-    <div className="container mx-auto px-4 py-6 max-w-2xl">
+    <PageContainer size="3xl">
       <div className="flex items-center gap-3 mb-6">
         <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
           <ArrowLeft className="size-5" />
         </Button>
-        <h1 className="text-2xl font-bold">设置</h1>
+        <h1 className="text-2xl font-bold text-gradient">设置</h1>
       </div>
 
       {/* 主题设置 */}
@@ -296,6 +297,6 @@ export function Settings() {
           </p>
         </div>
       </div>
-    </div>
+    </PageContainer>
   )
 }

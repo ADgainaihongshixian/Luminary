@@ -16,7 +16,7 @@ export function AlertCard({ alert, onReset, onDelete }: AlertCardProps) {
 
   return (
     <Card
-      className={`glass-card border-border/50 transition-colors ${isActive ? 'border-l-2 border-l-primary' : 'opacity-60'}`}
+      className={`glass-card border-border/50 transition-colors ${isActive ? 'border-l-2 border-l-primary animate-[pulse-glow_2s_ease-in-out_infinite]' : 'opacity-60'}`}
     >
       <CardContent className="p-4">
         <div className="flex items-start justify-between gap-3">

@@ -10,6 +10,8 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { StaggerItem } from '@/components/motion/FadeIn'
+import { NumberRoller } from '@/components/motion/NumberRoller'
+import { PriceFlash } from '@/components/motion/PriceFlash'
 import { Pencil, Trash2, TrendingUp, TrendingDown } from 'lucide-react'
 
 interface FundCardProps {
@@ -112,14 +114,20 @@ export function FundCard({
             <div>
               <div className="text-muted-foreground text-xs mb-0.5">最新净值</div>
               <div className="font-mono text-sm font-medium">
-                {nav !== undefined ? nav.toFixed(4) : '--'}
+                {nav !== undefined ? <NumberRoller value={nav} decimals={4} /> : '--'}
               </div>
               {navDate && <div className="text-muted-foreground text-xs">{navDate}</div>}
             </div>
             <div className="text-right">
               <div className="text-muted-foreground text-xs mb-0.5">实时估值</div>
               <div className="font-mono text-sm font-medium">
-                {estimateNav !== undefined ? estimateNav.toFixed(4) : '--'}
+                {estimateNav !== undefined ? (
+                  <PriceFlash value={estimateNav}>
+                    <NumberRoller value={estimateNav} decimals={4} />
+                  </PriceFlash>
+                ) : (
+                  '--'
+                )}
               </div>
               {estimateRate !== undefined ? (
                 <div
@@ -127,7 +135,7 @@ export function FundCard({
                 >
                   {isUp ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />}
                   {isUp ? '+' : ''}
-                  {estimateRate.toFixed(2)}%
+                  <NumberRoller value={estimateRate} decimals={2} suffix="%" />
                 </div>
               ) : (
                 <span className="text-muted-foreground text-xs">--</span>
@@ -140,12 +148,18 @@ export function FundCard({
             <div>
               <div className="text-muted-foreground text-xs mb-0.5">当日收益</div>
               {dailyProfit !== null ? (
-                <div
-                  className={`font-mono text-sm font-medium ${dailyProfit >= 0 ? 'text-up' : 'text-down'}`}
-                >
-                  {dailyProfit >= 0 ? '+' : ''}
-                  {dailyProfit.toFixed(2)} 元
-                </div>
+                <PriceFlash value={dailyProfit}>
+                  <div
+                    className={`font-mono text-sm font-medium ${dailyProfit >= 0 ? 'text-up' : 'text-down'}`}
+                  >
+                    <NumberRoller
+                      value={dailyProfit}
+                      decimals={2}
+                      prefix={dailyProfit >= 0 ? '+' : ''}
+                      suffix=" 元"
+                    />
+                  </div>
+                </PriceFlash>
               ) : (
                 <div className="text-muted-foreground text-xs">--</div>
               )}
@@ -156,12 +170,22 @@ export function FundCard({
                 <div
                   className={`font-mono text-sm font-medium ${totalProfit >= 0 ? 'text-up' : 'text-down'}`}
                 >
-                  {totalProfit >= 0 ? '+' : ''}
-                  {totalProfit.toFixed(2)} 元
+                  <NumberRoller
+                    value={totalProfit}
+                    decimals={2}
+                    prefix={totalProfit >= 0 ? '+' : ''}
+                    suffix=" 元"
+                  />
                   {totalProfitRate !== null && (
                     <span className="text-xs ml-1">
-                      ({totalProfitRate >= 0 ? '+' : ''}
-                      {totalProfitRate.toFixed(2)}%)
+                      (
+                      <NumberRoller
+                        value={totalProfitRate}
+                        decimals={2}
+                        prefix={totalProfitRate >= 0 ? '+' : ''}
+                        suffix="%"
+                      />
+                      )
                     </span>
                   )}
                 </div>

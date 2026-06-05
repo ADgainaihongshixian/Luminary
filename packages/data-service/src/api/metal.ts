@@ -21,6 +21,9 @@ interface BffMetalPrice {
   symbol: string
   price: number
   cnyPricePerGram: number
+  open?: number
+  high?: number
+  low?: number
   prevClose?: number
   change?: number
   changePercent?: number
@@ -50,9 +53,9 @@ export async function getMetalPrices(symbols: MetalSymbol[]): Promise<MetalPrice
         symbol: p.symbol as MetalSymbol,
         price,
         cnyPricePerGram: safeNumber(p.cnyPricePerGram),
-        open: price,
-        high: price,
-        low: price,
+        open: safeNumber(p.open, price),
+        high: safeNumber(p.high, price),
+        low: safeNumber(p.low, price),
         prevClose,
         change,
         changePercent,

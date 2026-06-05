@@ -126,6 +126,9 @@ export function MetalKlineChart({ data, height = 350, colorScheme }: MetalKlineC
             borderColor: up, // 涨 - 边框
             borderColor0: down, // 跌 - 边框
           },
+          animationDuration: 1500,
+          animationEasing: 'cubicOut' as const,
+          animationDelay: (idx: number) => idx * 5,
         },
         {
           name: 'MA5',
@@ -134,6 +137,9 @@ export function MetalKlineChart({ data, height = 350, colorScheme }: MetalKlineC
           smooth: true,
           showSymbol: false,
           lineStyle: { color: '#F59E0B', width: 1 },
+          animationDuration: 1500,
+          animationEasing: 'cubicOut' as const,
+          animationDelay: (idx: number) => idx * 5,
         },
         {
           name: 'MA20',
@@ -142,6 +148,9 @@ export function MetalKlineChart({ data, height = 350, colorScheme }: MetalKlineC
           smooth: true,
           showSymbol: false,
           lineStyle: { color: '#06B6D4', width: 1 },
+          animationDuration: 1500,
+          animationEasing: 'cubicOut' as const,
+          animationDelay: (idx: number) => idx * 5,
         },
       ],
       dataZoom: [

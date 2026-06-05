@@ -29,11 +29,15 @@ metalsRoutes.get('/price', async (c) => {
 /**
  * GET /api/metals/history?symbol=XAU&range=1M
  * 获取贵金属历史价格
+ * API Key 优先使用服务端环境变量，其次使用客户端 header 传入的 key
  */
 metalsRoutes.get('/history', async (c) => {
   const symbol = (c.req.query('symbol') ?? 'XAU').toUpperCase()
   const range = c.req.query('range') ?? '1M'
-  const apiKey = c.req.header('X-TwelveData-Key') ?? ''
+  // 优先使用服务端环境变量（通过 `wrangler secret put TWELVEDATA_API_KEY` 配置）
+  const serverKey = (c.env as Record<string, string>)?.TWELVEDATA_API_KEY || ''
+  const clientKey = c.req.header('X-TwelveData-Key') ?? ''
+  const apiKey = serverKey || clientKey
 
   try {
     const history = await cachedFetch(

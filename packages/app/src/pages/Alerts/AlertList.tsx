@@ -7,6 +7,7 @@ import { AlertCard } from './AlertCard'
 import { AddAlertDialog } from './AddAlertDialog'
 import { Button } from '@/components/ui/button'
 import { Plus, Bell, BellOff, ShieldAlert, ArrowLeft } from 'lucide-react'
+import { PageContainer } from '@/components/PageContainer'
 
 export function AlertList() {
   const navigate = useNavigate()
@@ -38,7 +39,7 @@ export function AlertList() {
   const triggeredAlerts = alerts.filter((a) => a.status === 'triggered')
 
   return (
-    <div className="container mx-auto px-4 py-6 max-w-3xl">
+    <PageContainer>
       {/* 页面标题 */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
@@ -46,8 +47,8 @@ export function AlertList() {
             <ArrowLeft className="size-5" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold">价格预警</h1>
-            <p className="text-muted-foreground text-sm mt-1">
+            <h1 className="text-2xl font-bold text-gradient">价格预警</h1>
+            <p className="text-muted-foreground text-xs mt-0.5">
               设置目标价格，首次触达时推送系统通知
             </p>
           </div>
@@ -168,6 +169,6 @@ export function AlertList() {
 
       {/* 添加弹窗 */}
       <AddAlertDialog open={addOpen} onOpenChange={setAddOpen} onSave={addAlert} />
-    </div>
+    </PageContainer>
   )
 }

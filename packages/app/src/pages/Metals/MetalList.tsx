@@ -3,8 +3,9 @@ import { useMetalPrices } from '@/hooks/useMetalPrices'
 import { useExchangeRate } from '@/hooks/useExchangeRate'
 import { MetalCard } from './MetalCard'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Gem, RefreshCw, ArrowLeft } from 'lucide-react'
+import { Gem, RefreshCw, ArrowLeft, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { PageContainer } from '@/components/PageContainer'
 
 /** 判断是否为周末（伦敦金市场休市） */
 function isWeekend() {
@@ -14,12 +15,12 @@ function isWeekend() {
 
 export function MetalList() {
   const navigate = useNavigate()
-  const { prices, isLoading, lastUpdatedAt, refresh } = useMetalPrices()
+  const { prices, isLoading, isError, lastUpdatedAt, refresh } = useMetalPrices()
   const { rate } = useExchangeRate()
   const weekend = isWeekend()
 
   return (
-    <div className="container mx-auto px-4 py-6 max-w-5xl">
+    <PageContainer>
       {/* 页面标题 */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
@@ -27,8 +28,8 @@ export function MetalList() {
             <ArrowLeft className="size-5" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold">贵金属行情</h1>
-            <p className="text-muted-foreground text-sm mt-1">实时监控黄金、白银、铂金国际价格</p>
+            <h1 className="text-2xl font-bold text-gradient">贵金属行情</h1>
+            <p className="text-muted-foreground text-xs mt-0.5">实时监控黄金、白银、铂金国际价格</p>
           </div>
         </div>
         {/* 汇率信息 */}
@@ -82,6 +83,18 @@ export function MetalList() {
             </div>
           ))}
         </div>
+      ) : isError && prices.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="size-16 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
+            <AlertCircle className="size-8 text-destructive" />
+          </div>
+          <h3 className="text-lg font-medium mb-2">数据加载失败</h3>
+          <p className="text-muted-foreground text-sm mb-6 max-w-sm">请检查网络连接或稍后重试</p>
+          <Button onClick={() => refresh()} variant="outline">
+            <RefreshCw className="size-4 mr-2" />
+            重试
+          </Button>
+        </div>
       ) : prices.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {prices.map((price) => (
@@ -110,6 +123,6 @@ export function MetalList() {
           </p>
         </div>
       </div>
-    </div>
+    </PageContainer>
   )
 }
