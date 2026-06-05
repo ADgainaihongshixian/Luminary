@@ -1,5 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
-import { db } from '@/db/db'
+import { usePersistedSetting } from './usePersistedSetting'
 
 export type ThemeColor = 'purple' | 'cyber' | 'aurora' | 'sunset' | 'sakura'
 
@@ -17,41 +16,8 @@ export const THEME_COLORS: {
 ]
 
 /**
- * 主题配色方案 hook
- * 管理 accent 颜色，持久化到 IndexedDB
+ * 验证是否为有效的配色方案
  */
-export function useThemeColor() {
-  const [themeColor, setThemeColorState] = useState<ThemeColor>('purple')
-
-  useEffect(() => {
-    const loadColor = async () => {
-      try {
-        const setting = await db.user_settings.where('key').equals('themeColor').first()
-        if (setting?.value && isValidThemeColor(setting.value as string)) {
-          setThemeColorState(setting.value as ThemeColor)
-          applyThemeColor(setting.value as ThemeColor)
-        }
-      } catch {
-        // 默认紫色
-      }
-    }
-    loadColor()
-  }, [])
-
-  const setThemeColor = useCallback(async (color: ThemeColor) => {
-    setThemeColorState(color)
-    applyThemeColor(color)
-
-    try {
-      await db.user_settings.put({ key: 'themeColor', value: color })
-    } catch (error) {
-      console.error('保存配色方案失败:', error)
-    }
-  }, [])
-
-  return { themeColor, setThemeColor }
-}
-
 function isValidThemeColor(value: string): value is ThemeColor {
   return ['purple', 'cyber', 'aurora', 'sunset', 'sakura'].includes(value)
 }
@@ -77,4 +43,19 @@ function applyThemeColor(color: ThemeColor) {
   if (color !== 'purple') {
     root.classList.add(`theme-${color}`)
   }
+}
+
+/**
+ * 主题配色方案 hook
+ * 管理 accent 颜色，持久化到 IndexedDB
+ */
+export function useThemeColor() {
+  const { value: themeColor, setValue: setThemeColor } = usePersistedSetting<ThemeColor>({
+    key: 'themeColor',
+    defaultValue: 'purple',
+    apply: applyThemeColor,
+    validate: isValidThemeColor,
+  })
+
+  return { themeColor, setThemeColor }
 }

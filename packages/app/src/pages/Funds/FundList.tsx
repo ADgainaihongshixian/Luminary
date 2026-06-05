@@ -11,8 +11,10 @@ import { StaggerContainer } from '@/components/motion/FadeIn'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { Plus, Search, TrendingUp, FolderPlus, X, ArrowLeft, RefreshCw } from 'lucide-react'
+import { Plus, Search, TrendingUp, FolderPlus, X, RefreshCw } from 'lucide-react'
 import { PageContainer } from '@/components/PageContainer'
+import { PageHeader } from '@/components/PageHeader'
+import { EmptyState } from '@/components/EmptyState'
 
 export function FundList() {
   const navigate = useNavigate()
@@ -112,37 +114,33 @@ export function FundList() {
   return (
     <PageContainer>
       {/* 页面标题 */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
-            <ArrowLeft className="size-5" />
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold text-gradient">我的基金</h1>
-            <p className="text-muted-foreground text-xs mt-0.5">管理持仓基金，实时查看估值与收益</p>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              loadFunds()
-              refreshAll()
-            }}
-            disabled={isLoading || isEstimatesLoading}
-          >
-            <RefreshCw
-              className={`size-3.5 ${isLoading || isEstimatesLoading ? 'animate-spin' : ''}`}
-            />
-            刷新
-          </Button>
-          <Button onClick={() => setSearchOpen(true)}>
-            <Plus className="size-4" />
-            添加基金
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        title="我的基金"
+        subtitle="管理持仓基金，实时查看估值与收益"
+        backTo="/"
+        actions={
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                loadFunds()
+                refreshAll()
+              }}
+              disabled={isLoading || isEstimatesLoading}
+            >
+              <RefreshCw
+                className={`size-3.5 ${isLoading || isEstimatesLoading ? 'animate-spin' : ''}`}
+              />
+              刷新
+            </Button>
+            <Button onClick={() => setSearchOpen(true)}>
+              <Plus className="size-4" />
+              添加基金
+            </Button>
+          </>
+        }
+      />
 
       {/* 分组筛选栏 */}
       <div className="flex flex-wrap items-center gap-2 mb-4">
@@ -250,23 +248,20 @@ export function FundList() {
         </StaggerContainer>
       ) : (
         /* 空态引导 */
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-            <TrendingUp className="size-8 text-primary" />
-          </div>
-          <h3 className="text-lg font-medium mb-2">
-            {selectedGroupId !== null ? '该分组暂无基金' : '暂无持仓基金'}
-          </h3>
-          <p className="text-muted-foreground text-sm mb-6 max-w-sm">
-            {selectedGroupId !== null
+        <EmptyState
+          icon={TrendingUp}
+          title={selectedGroupId !== null ? '该分组暂无基金' : '暂无持仓基金'}
+          description={
+            selectedGroupId !== null
               ? '切换到其他分组或添加新基金'
-              : '点击下方按钮搜索并添加你持有的基金，实时跟踪估值与收益'}
-          </p>
-          <Button onClick={() => setSearchOpen(true)} size="lg">
-            <Search className="size-4" />
-            搜索添加基金
-          </Button>
-        </div>
+              : '点击下方按钮搜索并添加你持有的基金，实时跟踪估值与收益'
+          }
+          action={{
+            label: '搜索添加基金',
+            onClick: () => setSearchOpen(true),
+            icon: Search,
+          }}
+        />
       )}
 
       {/* 搜索弹窗 */}

@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { searchFunds } from '@fund-monitor/data-service'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { useDebounce } from './useDebounce'
 
 /**
  * 基金搜索 hook
@@ -8,15 +9,7 @@ import { useState, useEffect } from 'react'
  */
 export function useFundSearch() {
   const [keyword, setKeyword] = useState('')
-  const [debouncedKeyword, setDebouncedKeyword] = useState('')
-
-  // debounce 300ms
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedKeyword(keyword)
-    }, 300)
-    return () => clearTimeout(timer)
-  }, [keyword])
+  const debouncedKeyword = useDebounce(keyword, 300)
 
   const query = useQuery({
     queryKey: ['fundSearch', debouncedKeyword],

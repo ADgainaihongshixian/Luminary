@@ -1,7 +1,5 @@
 import type { FundEstimate, FundSearchItem, FundNavHistory } from '@fund-monitor/shared'
-
-// BFF 基础地址（开发环境通过 Vite 代理，生产环境直接访问）
-const BFF_BASE = '/api'
+import { bffFetch } from './bffFetch'
 
 /**
  * 搜索基金
@@ -10,16 +8,14 @@ const BFF_BASE = '/api'
 export async function searchFunds(keyword: string): Promise<FundSearchItem[]> {
   if (!keyword || keyword.length < 2) return []
 
-  try {
-    const response = await fetch(`${BFF_BASE}/funds/search?keyword=${encodeURIComponent(keyword)}`)
-    if (!response.ok) return []
-
-    const data = await response.json()
-    return data.data ?? []
-  } catch (error) {
-    console.error('搜索基金失败:', error)
-    return []
-  }
+  return bffFetch<FundSearchItem[]>(
+    '/funds/search',
+    { keyword },
+    {
+      fallback: [],
+      errorPrefix: '搜索基金',
+    }
+  )
 }
 
 /**
@@ -27,16 +23,14 @@ export async function searchFunds(keyword: string): Promise<FundSearchItem[]> {
  * @param fundCode 基金代码
  */
 export async function getFundEstimate(fundCode: string): Promise<FundEstimate | null> {
-  try {
-    const response = await fetch(`${BFF_BASE}/funds/estimate?code=${fundCode}`)
-    if (!response.ok) return null
-
-    const data = await response.json()
-    return data.data ?? null
-  } catch (error) {
-    console.error('获取基金估值失败:', error)
-    return null
-  }
+  return bffFetch<FundEstimate | null>(
+    '/funds/estimate',
+    { code: fundCode },
+    {
+      fallback: null,
+      errorPrefix: '获取基金估值',
+    }
+  )
 }
 
 /**
@@ -50,16 +44,12 @@ export async function getFundNavHistory(
   page = 1,
   pageSize = 20
 ): Promise<FundNavHistory[]> {
-  try {
-    const response = await fetch(
-      `${BFF_BASE}/funds/nav?code=${fundCode}&page=${page}&size=${pageSize}`
-    )
-    if (!response.ok) return []
-
-    const data = await response.json()
-    return data.data ?? []
-  } catch (error) {
-    console.error('获取基金净值失败:', error)
-    return []
-  }
+  return bffFetch<FundNavHistory[]>(
+    '/funds/nav',
+    { code: fundCode, page: String(page), size: String(pageSize) },
+    {
+      fallback: [],
+      errorPrefix: '获取基金净值',
+    }
+  )
 }

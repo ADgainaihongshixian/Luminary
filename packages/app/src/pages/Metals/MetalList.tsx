@@ -3,9 +3,11 @@ import { useMetalPrices } from '@/hooks/useMetalPrices'
 import { useExchangeRate } from '@/hooks/useExchangeRate'
 import { MetalCard } from './MetalCard'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Gem, RefreshCw, ArrowLeft, AlertCircle } from 'lucide-react'
+import { Gem, RefreshCw, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { PageContainer } from '@/components/PageContainer'
+import { PageHeader } from '@/components/PageHeader'
+import { EmptyState } from '@/components/EmptyState'
 
 /** 判断是否为周末（伦敦金市场休市） */
 function isWeekend() {
@@ -22,24 +24,21 @@ export function MetalList() {
   return (
     <PageContainer>
       {/* 页面标题 */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
-            <ArrowLeft className="size-5" />
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold text-gradient">贵金属行情</h1>
-            <p className="text-muted-foreground text-xs mt-0.5">实时监控黄金、白银、铂金国际价格</p>
-          </div>
-        </div>
-        {/* 汇率信息 */}
-        {rate && (
-          <div className="text-right">
-            <div className="text-muted-foreground text-xs">实时汇率</div>
-            <div className="font-mono text-sm font-medium">1 USD = {rate.rate.toFixed(4)} CNY</div>
-          </div>
-        )}
-      </div>
+      <PageHeader
+        title="贵金属行情"
+        subtitle="实时监控黄金、白银、铂金国际价格"
+        backTo="/"
+        actions={
+          rate ? (
+            <div className="text-right">
+              <div className="text-muted-foreground text-xs">实时汇率</div>
+              <div className="font-mono text-sm font-medium">
+                1 USD = {rate.rate.toFixed(4)} CNY
+              </div>
+            </div>
+          ) : undefined
+        }
+      />
 
       {/* 周末休市提示 */}
       {weekend && (
@@ -84,17 +83,17 @@ export function MetalList() {
           ))}
         </div>
       ) : isError && prices.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="size-16 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
-            <AlertCircle className="size-8 text-destructive" />
-          </div>
-          <h3 className="text-lg font-medium mb-2">数据加载失败</h3>
-          <p className="text-muted-foreground text-sm mb-6 max-w-sm">请检查网络连接或稍后重试</p>
-          <Button onClick={() => refresh()} variant="outline">
-            <RefreshCw className="size-4 mr-2" />
-            重试
-          </Button>
-        </div>
+        <EmptyState
+          icon={AlertCircle}
+          title="数据加载失败"
+          description="请检查网络连接或稍后重试"
+          variant="muted"
+          action={{
+            label: '重试',
+            onClick: () => refresh(),
+            icon: RefreshCw,
+          }}
+        />
       ) : prices.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {prices.map((price) => (
@@ -102,13 +101,12 @@ export function MetalList() {
           ))}
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center mb-4">
-            <Gem className="size-8 text-accent" />
-          </div>
-          <h3 className="text-lg font-medium mb-2">暂无行情数据</h3>
-          <p className="text-muted-foreground text-sm max-w-sm">请检查网络连接或稍后重试</p>
-        </div>
+        <EmptyState
+          icon={Gem}
+          title="暂无行情数据"
+          description="请检查网络连接或稍后重试"
+          variant="accent"
+        />
       )}
 
       {/* 换算提示 */}

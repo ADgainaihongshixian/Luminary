@@ -1,16 +1,16 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
 import type { PriceAlert } from '@fund-monitor/shared'
 import { useAlertStore } from '@/store/useAlertStore'
 import { useNotification } from '@/hooks/useNotification'
 import { AlertCard } from './AlertCard'
 import { AddAlertDialog } from './AddAlertDialog'
 import { Button } from '@/components/ui/button'
-import { Plus, Bell, BellOff, ShieldAlert, ArrowLeft } from 'lucide-react'
+import { Plus, Bell, BellOff, ShieldAlert } from 'lucide-react'
 import { PageContainer } from '@/components/PageContainer'
+import { PageHeader } from '@/components/PageHeader'
+import { EmptyState } from '@/components/EmptyState'
 
 export function AlertList() {
-  const navigate = useNavigate()
   const { alerts, isLoading, loadAlerts, addAlert, deleteAlert, resetAlert } = useAlertStore()
   const { isSupported, isGranted, isDenied, requestPermission } = useNotification()
   const [addOpen, setAddOpen] = useState(false)
@@ -41,23 +41,17 @@ export function AlertList() {
   return (
     <PageContainer>
       {/* 页面标题 */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
-            <ArrowLeft className="size-5" />
+      <PageHeader
+        title="价格预警"
+        subtitle="设置目标价格，首次触达时推送系统通知"
+        backTo="/"
+        actions={
+          <Button onClick={handleAddClick}>
+            <Plus className="size-4" />
+            添加预警
           </Button>
-          <div>
-            <h1 className="text-2xl font-bold text-gradient">价格预警</h1>
-            <p className="text-muted-foreground text-xs mt-0.5">
-              设置目标价格，首次触达时推送系统通知
-            </p>
-          </div>
-        </div>
-        <Button onClick={handleAddClick}>
-          <Plus className="size-4" />
-          添加预警
-        </Button>
-      </div>
+        }
+      />
 
       {/* 通知权限提示 */}
       {isSupported && !isGranted && showPermissionBanner && (
@@ -152,19 +146,16 @@ export function AlertList() {
         </div>
       ) : (
         /* 空态引导 */
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-            <Bell className="size-8 text-primary" />
-          </div>
-          <h3 className="text-lg font-medium mb-2">暂无预警规则</h3>
-          <p className="text-muted-foreground text-sm mb-6 max-w-sm">
-            为贵金属或基金设置目标价格，当价格达到目标位时第一时间收到通知
-          </p>
-          <Button onClick={handleAddClick} size="lg">
-            <Plus className="size-4" />
-            添加第一条预警
-          </Button>
-        </div>
+        <EmptyState
+          icon={Bell}
+          title="暂无预警规则"
+          description="为贵金属或基金设置目标价格，当价格达到目标位时第一时间收到通知"
+          action={{
+            label: '添加第一条预警',
+            onClick: handleAddClick,
+            icon: Plus,
+          }}
+        />
       )}
 
       {/* 添加弹窗 */}

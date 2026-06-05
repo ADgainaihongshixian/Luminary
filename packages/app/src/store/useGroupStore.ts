@@ -1,13 +1,7 @@
 import { create } from 'zustand'
 import type { FundGroup } from '@fund-monitor/shared'
 import { db } from '@/db/db'
-
-function generateId(): string {
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-    return crypto.randomUUID()
-  }
-  return 'xxxx-xxxx-xxxx'.replace(/x/g, () => Math.floor(Math.random() * 16).toString(16))
-}
+import { generateId } from '@/lib/id'
 
 interface GroupStore {
   groups: FundGroup[]

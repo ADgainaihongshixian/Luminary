@@ -1,6 +1,5 @@
 import type { MetalSymbol, MetalPrice, MetalOHLC } from '@fund-monitor/shared'
-
-const BFF_BASE = '/api'
+import { bffFetch, safeNumber } from './bffFetch'
 
 /** 全局 API Key，由前端启动时注入 */
 let twelveDataKey = ''
@@ -8,13 +7,6 @@ let twelveDataKey = ''
 /** 设置 Twelve Data API Key（由前端调用） */
 export function setTwelveDataKey(key: string) {
   twelveDataKey = key
-}
-
-/** 安全数值转换，防止 NaN */
-function safeNumber(value: unknown, fallback = 0): number {
-  if (value === null || value === undefined) return fallback
-  const n = Number(value)
-  return Number.isFinite(n) ? n : fallback
 }
 
 interface BffMetalPrice {
@@ -35,60 +27,56 @@ interface BffMetalPrice {
  * BFF 返回含涨跌数据的完整价格信息
  */
 export async function getMetalPrices(symbols: MetalSymbol[]): Promise<MetalPrice[]> {
-  try {
-    const symbolsParam = symbols.join(',')
-    const response = await fetch(`${BFF_BASE}/metals/price?symbols=${symbolsParam}`)
-    if (!response.ok) return []
+  const prices = await bffFetch<BffMetalPrice[]>(
+    '/metals/price',
+    { symbols: symbols.join(',') },
+    {
+      fallback: [],
+      errorPrefix: '获取贵金属价格',
+    }
+  )
 
-    const data = await response.json()
-    const prices: BffMetalPrice[] = data.data ?? []
+  if (!Array.isArray(prices)) return []
 
-    return prices.map((p) => {
-      const price = safeNumber(p.price)
-      const prevClose = safeNumber(p.prevClose, price)
-      const change = safeNumber(p.change)
-      const changePercent = safeNumber(p.changePercent)
+  return prices.map((p) => {
+    const price = safeNumber(p.price)
+    const prevClose = safeNumber(p.prevClose, price)
+    const change = safeNumber(p.change)
+    const changePercent = safeNumber(p.changePercent)
 
-      return {
-        symbol: p.symbol as MetalSymbol,
-        price,
-        cnyPricePerGram: safeNumber(p.cnyPricePerGram),
-        open: safeNumber(p.open, price),
-        high: safeNumber(p.high, price),
-        low: safeNumber(p.low, price),
-        prevClose,
-        change,
-        changePercent,
-        dayChange: change,
-        dayChangePercent: changePercent,
-        updatedAt: safeNumber(new Date(p.updatedAt).getTime(), Date.now()),
-      }
-    })
-  } catch (error) {
-    console.error('获取贵金属价格失败:', error)
-    return []
-  }
+    return {
+      symbol: p.symbol as MetalSymbol,
+      price,
+      cnyPricePerGram: safeNumber(p.cnyPricePerGram),
+      open: safeNumber(p.open, price),
+      high: safeNumber(p.high, price),
+      low: safeNumber(p.low, price),
+      prevClose,
+      change,
+      changePercent,
+      dayChange: change,
+      dayChangePercent: changePercent,
+      updatedAt: safeNumber(new Date(p.updatedAt).getTime(), Date.now()),
+    }
+  })
 }
 
 /**
  * 获取贵金属历史 OHLC 数据
  */
 export async function getMetalHistory(symbol: MetalSymbol, range: string): Promise<MetalOHLC[]> {
-  try {
-    const headers: Record<string, string> = {}
-    if (twelveDataKey) {
-      headers['X-TwelveData-Key'] = twelveDataKey
-    }
-
-    const response = await fetch(`${BFF_BASE}/metals/history?symbol=${symbol}&range=${range}`, {
-      headers,
-    })
-    if (!response.ok) return []
-
-    const data = await response.json()
-    return data.data ?? []
-  } catch (error) {
-    console.error('获取贵金属历史数据失败:', error)
-    return []
+  const headers: Record<string, string> = {}
+  if (twelveDataKey) {
+    headers['X-TwelveData-Key'] = twelveDataKey
   }
+
+  return bffFetch<MetalOHLC[]>(
+    '/metals/history',
+    { symbol, range },
+    {
+      headers,
+      fallback: [],
+      errorPrefix: '获取贵金属历史数据',
+    }
+  )
 }

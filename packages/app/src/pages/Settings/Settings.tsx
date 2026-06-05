@@ -1,5 +1,4 @@
 import { useState, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { exportData } from '@/utils/export'
 import { importData } from '@/utils/import'
 import { useTheme } from '@/hooks/useTheme'
@@ -10,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { PageContainer } from '@/components/PageContainer'
+import { PageHeader } from '@/components/PageHeader'
 import {
   Download,
   Upload,
@@ -18,7 +18,6 @@ import {
   Sun,
   Moon,
   Monitor,
-  ArrowLeft,
   Eye,
   EyeOff,
   Key,
@@ -85,16 +84,9 @@ export function Settings() {
     setTimeout(() => setApiKeySaved(false), 2000)
   }
 
-  const navigate = useNavigate()
-
   return (
     <PageContainer size="3xl">
-      <div className="flex items-center gap-3 mb-6">
-        <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
-          <ArrowLeft className="size-5" />
-        </Button>
-        <h1 className="text-2xl font-bold text-gradient">设置</h1>
-      </div>
+      <PageHeader title="设置" backTo="/" />
 
       {/* 主题设置 */}
       <div className="glass-card p-5 mb-4">

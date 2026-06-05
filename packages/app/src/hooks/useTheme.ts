@@ -1,58 +1,13 @@
-import { useState, useEffect, useCallback } from 'react'
-import { db } from '@/db/db'
+import { useEffect } from 'react'
+import { usePersistedSetting } from './usePersistedSetting'
 
 type Theme = 'dark' | 'light' | 'system'
 
 /**
- * 主题管理 hook
- * 支持 dark / light / system 三种模式
- * 持久化到 IndexedDB user_settings
+ * 验证是否为有效的主题
  */
-export function useTheme() {
-  const [theme, setThemeState] = useState<Theme>('dark')
-
-  // 初始化：从 IndexedDB 读取，或检测系统偏好
-  useEffect(() => {
-    const loadTheme = async () => {
-      try {
-        const setting = await db.user_settings.get('theme')
-        if (setting?.value) {
-          setThemeState(setting.value as Theme)
-          applyTheme(setting.value as Theme)
-        } else {
-          // 默认暗色
-          applyTheme('dark')
-        }
-      } catch {
-        applyTheme('dark')
-      }
-    }
-    loadTheme()
-  }, [])
-
-  // 监听系统主题变化
-  useEffect(() => {
-    if (theme !== 'system') return
-
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-    const handleChange = () => applyTheme('system')
-
-    mediaQuery.addEventListener('change', handleChange)
-    return () => mediaQuery.removeEventListener('change', handleChange)
-  }, [theme])
-
-  const setTheme = useCallback(async (newTheme: Theme) => {
-    setThemeState(newTheme)
-    applyTheme(newTheme)
-
-    try {
-      await db.user_settings.put({ key: 'theme', value: newTheme })
-    } catch (error) {
-      console.error('保存主题设置失败:', error)
-    }
-  }, [])
-
-  return { theme, setTheme }
+function isValidTheme(value: string): value is Theme {
+  return ['dark', 'light', 'system'].includes(value)
 }
 
 /**
@@ -71,4 +26,31 @@ function applyTheme(theme: Theme) {
     root.classList.remove('dark')
     root.classList.add('light')
   }
+}
+
+/**
+ * 主题管理 hook
+ * 支持 dark / light / system 三种模式
+ * 持久化到 IndexedDB user_settings
+ */
+export function useTheme() {
+  const { value: theme, setValue: setTheme } = usePersistedSetting<Theme>({
+    key: 'theme',
+    defaultValue: 'dark',
+    apply: applyTheme,
+    validate: isValidTheme,
+  })
+
+  // 监听系统主题变化（仅 system 模式下生效）
+  useEffect(() => {
+    if (theme !== 'system') return
+
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    const handleChange = () => applyTheme('system')
+
+    mediaQuery.addEventListener('change', handleChange)
+    return () => mediaQuery.removeEventListener('change', handleChange)
+  }, [theme])
+
+  return { theme, setTheme }
 }

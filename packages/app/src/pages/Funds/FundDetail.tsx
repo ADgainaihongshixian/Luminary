@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import type { FundNavHistory } from '@fund-monitor/shared'
 import { FUND_TYPE_LABEL } from '@fund-monitor/shared'
 import { getFundNavHistory, getFundEstimate } from '@fund-monitor/data-service'
 import { FundNavChart } from '@/components/charts/FundNavChart'
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
@@ -17,7 +16,8 @@ import {
 } from '@/components/ui/table'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PageContainer } from '@/components/PageContainer'
-import { ArrowLeft, TrendingUp, TrendingDown } from 'lucide-react'
+import { PageHeader } from '@/components/PageHeader'
+import { TrendingUp, TrendingDown } from 'lucide-react'
 
 const TIME_RANGES = [
   { label: '近1月', value: '1M' },
@@ -30,7 +30,6 @@ const TIME_RANGES = [
 
 export function FundDetail() {
   const { code } = useParams<{ code: string }>()
-  const navigate = useNavigate()
   const [range, setRange] = useState('1M')
   const [navData, setNavData] = useState<FundNavHistory[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -59,24 +58,20 @@ export function FundDetail() {
   return (
     <PageContainer>
       {/* 顶部导航 */}
-      <div className="flex items-center gap-3 mb-6">
-        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-          <ArrowLeft className="size-5" />
-        </Button>
-        <div>
-          <h1 className="text-xl font-bold text-gradient">
-            {fundInfo?.name ?? code ?? '基金详情'}
-          </h1>
-          <div className="flex items-center gap-2 mt-0.5">
+      <PageHeader
+        title={fundInfo?.name ?? code ?? '基金详情'}
+        backTo={-1}
+        extra={
+          <>
             <span className="text-muted-foreground text-xs font-mono">{code}</span>
             {fundInfo && (
               <Badge variant="secondary" className="text-xs">
                 {FUND_TYPE_LABEL[fundInfo.type as keyof typeof FUND_TYPE_LABEL] ?? fundInfo.type}
               </Badge>
             )}
-          </div>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       {/* 时间范围切换 */}
       <Tabs value={range} onValueChange={setRange} className="mb-4">

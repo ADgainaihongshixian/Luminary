@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import type { MetalSymbol, MetalOHLC } from '@fund-monitor/shared'
 import { METALS, DEFAULT_METAL_SYMBOLS, usdOzToCnyGram } from '@fund-monitor/shared'
 import { getMetalPrices, getMetalHistory } from '@fund-monitor/data-service'
 import { useExchangeRate } from '@/hooks/useExchangeRate'
 import { MetalKlineChart } from '@/components/charts/MetalKlineChart'
-import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Table,
@@ -17,10 +16,11 @@ import {
 } from '@/components/ui/table'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Progress } from '@/components/ui/progress'
-import { ArrowLeft, TrendingUp, TrendingDown, Calculator } from 'lucide-react'
+import { TrendingUp, TrendingDown, Calculator } from 'lucide-react'
 import { useColorScheme } from '@/hooks/useColorScheme'
 import { Input } from '@/components/ui/input'
 import { PageContainer } from '@/components/PageContainer'
+import { PageHeader } from '@/components/PageHeader'
 
 const TIME_RANGES = [
   { label: '1天', value: '1D' },
@@ -32,7 +32,6 @@ const TIME_RANGES = [
 
 export function MetalDetail() {
   const { symbol } = useParams<{ symbol: string }>()
-  const navigate = useNavigate()
   const metalSymbol = (symbol?.toUpperCase() ?? 'XAU') as MetalSymbol
   const metalInfo = METALS[metalSymbol]
   const { rate: exchangeRate } = useExchangeRate()
@@ -96,19 +95,11 @@ export function MetalDetail() {
   return (
     <PageContainer>
       {/* 顶部导航 */}
-      <div className="flex items-center gap-3 mb-6">
-        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-          <ArrowLeft className="size-5" />
-        </Button>
-        <div>
-          <h1 className="text-xl font-bold text-gradient">
-            {metalInfo.name} ({metalInfo.symbol})
-          </h1>
-          <span className="text-muted-foreground text-xs">
-            {metalInfo.nameEn} · {metalInfo.unit}
-          </span>
-        </div>
-      </div>
+      <PageHeader
+        title={`${metalInfo.name} (${metalInfo.symbol})`}
+        subtitle={`${metalInfo.nameEn} · ${metalInfo.unit}`}
+        backTo={-1}
+      />
 
       {/* 当前价格 */}
       {currentPrice && (

@@ -9,7 +9,7 @@
  * - 【汇率】open.er-api.com（海外 ~1s，免费，无需 Key）
  */
 
-import { getSinaRealtimePrices } from './sina-finance'
+import { getSinaRealtimePrices, getSinaHistory } from './sina-finance'
 
 const TROY_OZ_TO_GRAM = 31.1035
 
@@ -197,7 +197,8 @@ export async function getMetalPrices(symbols: string[]): Promise<MetalPriceData[
 
 /**
  * 获取历史 K 线数据
- * 全部走 Twelve Data（国际现货价格，USD/oz），确保与实时数据一致
+ * - 金银（XAU/XAG）：走新浪期货 API（免费，无需 Key）
+ * - 铂金/钯金（XPT/XPD）：走 Twelve Data（需 API Key）
  * @param apiKey - 前端传入的 API Key（优先），兜底使用环境变量
  */
 export async function getMetalHistory(
@@ -205,7 +206,34 @@ export async function getMetalHistory(
   range: string,
   apiKey?: string
 ): Promise<MetalHistoryEntry[]> {
+  // 金银走新浪期货（免费，无需 Key）
+  if (SINA_SUPPORTED.has(symbol)) {
+    const rate = await fetchExchangeRate('USD', 'CNY')
+    const sinaData = await getSinaHistory(symbol, rate)
+    if (sinaData.length > 0) {
+      // 根据 range 筛选数据
+      return filterByRange(sinaData, range)
+    }
+  }
+
+  // 铂金/钯金走 Twelve Data（需要 API Key）
   return fetchTwelveDataHistory(symbol, range, apiKey)
+}
+
+/**
+ * 根据时间范围筛选历史数据
+ */
+function filterByRange(data: MetalHistoryEntry[], range: string): MetalHistoryEntry[] {
+  const sizeMap: Record<string, number> = {
+    '1D': 5,
+    '1W': 7,
+    '1M': 30,
+    '3M': 90,
+    '1Y': 250,
+  }
+  const size = sizeMap[range] ?? 30
+  // 数据已经是正序（最老在前），取最后 N 条
+  return data.slice(-size)
 }
 
 // --- Twelve Data 兜底 ---

@@ -16,3 +16,7 @@ export {
   calcChange,
   calcChangePercent,
 } from './price'
+
+export { safeNumber, isPositiveNumber, safeDivide } from './number'
+
+export { calculateFundMetrics, type FundMetrics } from './fund-metrics'
