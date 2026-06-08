@@ -657,7 +657,7 @@ ENVIRONMENT = "production"
 
 ## 参考文档
 
-- PRD：`.claude/documents/fund-metals-monitor-PRD.md`（v2.0.0）
+- PRD：`docs/fund-metals-monitor-PRD.md`（v2.0.0）
 - shadcn/ui 文档：https://ui.shadcn.com
 - Dexie.js 文档：https://dexie.org/docs
 - TanStack Query 文档：https://tanstack.com/query/v5

@@ -40,10 +40,12 @@ metalsRoutes.get('/history', async (c) => {
   const apiKey = serverKey || clientKey
 
   try {
+    // 1D 分时数据更新更频繁，缓存 60 秒；其他范围缓存 5 分钟
+    const ttl = range === '1D' ? 60 : 300
     const history = await cachedFetch(
       `metals:history:${symbol}:${range}:${apiKey.slice(-4)}`,
       () => getMetalHistory(symbol, range, apiKey),
-      { ttl: 300 } // 缓存 5 分钟
+      { ttl }
     )
 
     return c.json({ success: true, data: history })

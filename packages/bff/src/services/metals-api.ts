@@ -9,7 +9,7 @@
  * - 【汇率】open.er-api.com（海外 ~1s，免费，无需 Key）
  */
 
-import { getSinaRealtimePrices, getSinaHistory } from './sina-finance'
+import { getSinaRealtimePrices, getSinaHistory, getSinaIntraday } from './sina-finance'
 
 const TROY_OZ_TO_GRAM = 31.1035
 
@@ -197,8 +197,8 @@ export async function getMetalPrices(symbols: string[]): Promise<MetalPriceData[
 
 /**
  * 获取历史 K 线数据
- * - 金银（XAU/XAG）：走新浪期货 API（免费，无需 Key）
- * - 铂金/钯金（XPT/XPD）：走 Twelve Data（需 API Key）
+ * - 1D（分时）：金银走新浪期货5分钟K线，铂金/钯金走 Twelve Data 5min
+ * - 其他（日K）：金银走新浪期货日K，铂金/钯金走 Twelve Data 1day
  * @param apiKey - 前端传入的 API Key（优先），兜底使用环境变量
  */
 export async function getMetalHistory(
@@ -206,7 +206,17 @@ export async function getMetalHistory(
   range: string,
   apiKey?: string
 ): Promise<MetalHistoryEntry[]> {
-  // 金银走新浪期货（免费，无需 Key）
+  // 1D 分时数据
+  if (range === '1D') {
+    if (SINA_SUPPORTED.has(symbol)) {
+      const rate = await fetchExchangeRate('USD', 'CNY')
+      const intraday = await getSinaIntraday(symbol, rate)
+      if (intraday.length > 0) return intraday
+    }
+    return fetchTwelveDataHistory(symbol, range, apiKey, '5min')
+  }
+
+  // 日K数据：金银走新浪期货（免费，无需 Key）
   if (SINA_SUPPORTED.has(symbol)) {
     const rate = await fetchExchangeRate('USD', 'CNY')
     const sinaData = await getSinaHistory(symbol, rate)
@@ -225,7 +235,7 @@ export async function getMetalHistory(
  */
 function filterByRange(data: MetalHistoryEntry[], range: string): MetalHistoryEntry[] {
   const sizeMap: Record<string, number> = {
-    '1D': 5,
+    '1D': 48, // 5分钟级别，约4小时交易时段
     '1W': 7,
     '1M': 30,
     '3M': 90,
@@ -250,7 +260,7 @@ const TWELVEDATA_SYMBOLS: Record<string, string> = {
 }
 
 const RANGE_OUTPUTSIZE: Record<string, number> = {
-  '1D': 5,
+  '1D': 48, // 5分钟级别，约4小时交易时段
   '1W': 7,
   '1M': 30,
   '3M': 90,
@@ -260,7 +270,8 @@ const RANGE_OUTPUTSIZE: Record<string, number> = {
 async function fetchTwelveDataHistory(
   symbol: string,
   range: string,
-  apiKey?: string
+  apiKey?: string,
+  interval: string = '1day'
 ): Promise<MetalHistoryEntry[]> {
   const key = apiKey || TWELVEDATA_API_KEY
   if (!key) return []
@@ -269,7 +280,7 @@ async function fetchTwelveDataHistory(
   if (!tdSymbol) return []
 
   const size = RANGE_OUTPUTSIZE[range] ?? 30
-  const url = `https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(tdSymbol)}&interval=1day&outputsize=${size}&apikey=${key}`
+  const url = `https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(tdSymbol)}&interval=${interval}&outputsize=${size}&apikey=${key}`
 
   try {
     const response = await fetch(url)

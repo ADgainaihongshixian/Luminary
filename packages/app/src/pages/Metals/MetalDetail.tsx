@@ -92,6 +92,9 @@ export function MetalDetail() {
   // 动态标题
   const rangeLabel = TIME_RANGES.find((r) => r.value === range)?.label ?? range
 
+  // 1D 用分时折线图，其他用 K 线图
+  const chartType = range === '1D' ? 'line' : 'candlestick'
+
   return (
     <PageContainer>
       {/* 顶部导航 */}
@@ -134,10 +137,10 @@ export function MetalDetail() {
         </TabsList>
       </Tabs>
 
-      {/* K 线图 */}
+      {/* K 线图 / 分时图 */}
       <div className="glass-card p-4 mb-4">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-sm font-medium">K 线走势</h3>
+          <h3 className="text-sm font-medium">{chartType === 'line' ? '分时走势' : 'K 线走势'}</h3>
           {ohlcData.length > 0 && (
             <span className="text-xs text-muted-foreground">数据来源：新浪财经</span>
           )}
@@ -145,7 +148,12 @@ export function MetalDetail() {
         {isLoading ? (
           <Skeleton className="w-full h-[350px] rounded-lg" />
         ) : ohlcData.length > 0 ? (
-          <MetalKlineChart data={ohlcData} height={350} colorScheme={colorScheme} />
+          <MetalKlineChart
+            data={ohlcData}
+            height={350}
+            colorScheme={colorScheme}
+            chartType={chartType}
+          />
         ) : (
           <div className="flex flex-col items-center justify-center h-[350px] text-center">
             <p className="text-muted-foreground text-sm mb-2">暂无历史数据</p>
@@ -184,7 +192,7 @@ export function MetalDetail() {
             <Table>
               <TableHeader className="sticky top-0 bg-card z-10">
                 <TableRow>
-                  <TableHead>日期</TableHead>
+                  <TableHead>{chartType === 'line' ? '时间' : '日期'}</TableHead>
                   <TableHead className="text-right">开盘</TableHead>
                   <TableHead className="text-right">最高</TableHead>
                   <TableHead className="text-right">最低</TableHead>

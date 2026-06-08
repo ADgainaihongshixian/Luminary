@@ -281,7 +281,7 @@ pnpm dlx shadcn@latest add button --cwd packages/app  # 安装 shadcn 组件
 ## 参考文档
 
 - 完整文档：`README.md`
-- PRD：`.claude/documents/fund-metals-monitor-PRD.md`
+- PRD：`docs/fund-metals-monitor-PRD.md`
 - shadcn/ui：https://ui.shadcn.com
 - Dexie.js：https://dexie.org/docs
 - TanStack Query：https://tanstack.com/query/v5

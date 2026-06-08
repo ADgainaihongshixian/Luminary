@@ -227,3 +227,130 @@ function parseSinaHistory(_symbol: string, text: string, exchangeRate: number): 
 
   return entries
 }
+
+/** 从 datetime 字符串提取小时数（如 "2026-06-05 13:35:00" → 13） */
+function getTimeHour(datetime: string): number {
+  const timePart = datetime.split(' ')[1]
+  if (!timePart) return -1
+  return Number(timePart.split(':')[0])
+}
+
+/**
+ * 获取分时 K 线数据（5分钟级别）
+ * 使用新浪期货 API（InnerFuturesNewService.getFewMinLine），返回换算后的 USD/oz
+ * 按交易日过滤（上海期货交易所：夜盘 21:00-02:30 + 日盘 09:00-15:00）
+ * 非交易时段返回最近一个完整交易日的数据
+ */
+export async function getSinaIntraday(
+  symbol: string,
+  exchangeRate: number
+): Promise<SinaHistoryEntry[]> {
+  const futuresSymbol = SINA_FUTURES_SYMBOLS[symbol]
+  if (!futuresSymbol) return []
+
+  try {
+    const url = `https://stock.finance.sina.com.cn/futures/api/jsonp.php/var/InnerFuturesNewService.getFewMinLine?symbol=${futuresSymbol}&type=5`
+    const response = await fetch(url, {
+      headers: {
+        Referer: 'https://finance.sina.com.cn',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+      },
+    })
+
+    if (!response.ok) return []
+
+    const text = await response.text()
+    const allData = parseSinaIntraday(text, exchangeRate)
+    if (allData.length === 0) return []
+
+    // 按交易日过滤（上海期货交易所）
+    // 夜盘 21:00-02:30 和日盘 09:00-15:00 属于同一个交易日
+    const now = new Date()
+    const cnHour = Number(
+      now.toLocaleString('en-US', { timeZone: 'Asia/Shanghai', hour: 'numeric', hour12: false })
+    )
+    const cnDateStr = now.toLocaleDateString('sv-SE', { timeZone: 'Asia/Shanghai' })
+    // 前一个自然日（用于夜盘 00:00-02:30 的数据）
+    const prevDate = new Date(now.getTime() - 86400000)
+    const prevDateStr = prevDate.toLocaleDateString('sv-SE', { timeZone: 'Asia/Shanghai' })
+
+    const isInDaySession = cnHour >= 9 && cnHour < 15
+    const isInNightSession = cnHour >= 21 || cnHour < 3
+
+    if (isInDaySession) {
+      // 日盘时段：显示今天的完整数据（含凌晨 00:00-02:30 + 日盘 09:00-当前）
+      return allData.filter(
+        (e) =>
+          (e.date.startsWith(cnDateStr) && (getTimeHour(e.date) < 3 || getTimeHour(e.date) >= 9)) ||
+          (e.date.startsWith(prevDateStr) && getTimeHour(e.date) >= 21)
+      )
+    }
+
+    if (isInNightSession) {
+      // 夜盘时段：显示昨天日盘 + 今晚夜盘
+      return allData.filter(
+        (e) =>
+          (e.date.startsWith(cnDateStr) && getTimeHour(e.date) >= 21) ||
+          (e.date.startsWith(cnDateStr) && getTimeHour(e.date) < 3) ||
+          (e.date.startsWith(prevDateStr) && getTimeHour(e.date) >= 9 && getTimeHour(e.date) < 15)
+      )
+    }
+
+    // 非交易时段（15:00-21:00）：显示今天完整数据（凌晨夜盘 + 日盘）
+    const lastEntry = allData[allData.length - 1]
+    if (lastEntry) {
+      const lastDate = lastEntry.date.split(' ')[0]
+      return allData.filter(
+        (e) =>
+          (e.date.startsWith(lastDate) && getTimeHour(e.date) >= 9) ||
+          (e.date.startsWith(lastDate) && getTimeHour(e.date) < 3)
+      )
+    }
+    return []
+  } catch (error) {
+    console.error(`新浪期货 ${symbol} 分时数据获取失败:`, error)
+    return []
+  }
+}
+
+/**
+ * 解析新浪期货分时 K 线
+ * 格式：var xxx = [{"d":"datetime","o":"开","h":"高","l":"低","c":"收盘"}, ...]
+ * datetime 格式：2024-01-15 09:05
+ * 期货价格单位：CNY/克 → 需换算为 USD/盎司
+ */
+function parseSinaIntraday(text: string, exchangeRate: number): SinaHistoryEntry[] {
+  const match = text.match(/\[.+\]/s)
+  if (!match) return []
+
+  let rows: { d: string; o: string; h: string; l: string; c: string }[]
+  try {
+    rows = JSON.parse(match[0])
+  } catch {
+    return []
+  }
+
+  const rate = exchangeRate > 0 ? exchangeRate : 7.2
+  const toUsdOz = (v: number) => +((v * TROY_OZ_TO_GRAM) / rate).toFixed(2)
+
+  const entries: SinaHistoryEntry[] = []
+
+  for (const row of rows) {
+    const o = Number(row.o)
+    const h = Number(row.h)
+    const l = Number(row.l)
+    const c = Number(row.c)
+
+    if (!Number.isFinite(o) || !Number.isFinite(c) || c <= 0) continue
+
+    entries.push({
+      date: row.d,
+      open: toUsdOz(o),
+      high: toUsdOz(h),
+      low: toUsdOz(l),
+      close: toUsdOz(c),
+    })
+  }
+
+  return entries
+}
