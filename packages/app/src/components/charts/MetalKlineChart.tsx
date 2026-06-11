@@ -6,6 +6,7 @@ import {
   TooltipComponent,
   DataZoomComponent,
   MarkLineComponent,
+  LegendComponent,
 } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
 import type { MetalOHLC } from '@fund-monitor/shared'
@@ -17,6 +18,7 @@ echarts.use([
   TooltipComponent,
   DataZoomComponent,
   MarkLineComponent,
+  LegendComponent,
   CanvasRenderer,
 ])
 
@@ -174,46 +176,66 @@ function buildCandlestickOption(data: MetalOHLC[], up: string, down: string) {
   const ma20: (number | null)[] = []
 
   for (let i = 0; i < data.length; i++) {
-    if (i >= 4) {
-      const sum5 = data.slice(i - 4, i + 1).reduce((s, d) => s + d.close, 0)
-      ma5.push(+(sum5 / 5).toFixed(2))
-    } else {
-      ma5.push(null)
-    }
-    if (i >= 19) {
-      const sum20 = data.slice(i - 19, i + 1).reduce((s, d) => s + d.close, 0)
-      ma20.push(+(sum20 / 20).toFixed(2))
-    } else {
-      ma20.push(null)
-    }
+    // MA5：数据不足5个时，用已有数据计算部分均值
+    const count5 = Math.min(i + 1, 5)
+    const sum5 = data.slice(i - count5 + 1, i + 1).reduce((s, d) => s + d.close, 0)
+    ma5.push(+(sum5 / count5).toFixed(2))
+
+    // MA20：数据不足20个时，用已有数据计算部分均值
+    const count20 = Math.min(i + 1, 20)
+    const sum20 = data.slice(i - count20 + 1, i + 1).reduce((s, d) => s + d.close, 0)
+    ma20.push(+(sum20 / count20).toFixed(2))
   }
 
   return {
     backgroundColor: 'transparent',
-    grid: [{ top: 20, right: 16, bottom: 80, left: 60 }],
+    legend: {
+      data: [
+        { name: 'MA5（5日均线）', icon: 'line' },
+        { name: 'MA20（20日均线）', icon: 'line' },
+      ],
+      top: 0,
+      left: 60,
+      textStyle: { color: '#94A3B8', fontSize: 11 },
+      itemWidth: 16,
+      itemHeight: 2,
+    },
+    grid: [{ top: 28, right: 16, bottom: 80, left: 60 }],
     tooltip: {
       trigger: 'axis',
       axisPointer: { type: 'cross' },
       backgroundColor: 'rgba(20, 23, 38, 0.95)',
       borderColor: '#1E2240',
       textStyle: { color: '#E2E8F0', fontSize: 12 },
-      formatter: (params: { seriesName: string; data: number[]; name: string }[]) => {
+      formatter: (params: { seriesName: string; data: number[] | number; name: string }[]) => {
         const candle = params.find((p) => p.seriesName === 'K线')
         if (!candle) return ''
         const idx = dateIndexMap.get(candle.name)
         const item = idx !== undefined ? data[idx] : null
-        const open = item?.open ?? candle.data[0]
-        const close = item?.close ?? candle.data[1]
-        const low = item?.low ?? candle.data[2]
-        const high = item?.high ?? candle.data[3]
+        const open = item?.open ?? (candle.data as number[])[0]
+        const close = item?.close ?? (candle.data as number[])[1]
+        const low = item?.low ?? (candle.data as number[])[2]
+        const high = item?.high ?? (candle.data as number[])[3]
         const isUp = close >= open
         const color = isUp ? up : down
+        const ma5Point = params.find((p) => p.seriesName === 'MA5（5日均线）')
+        const ma20Point = params.find((p) => p.seriesName === 'MA20（20日均线）')
+        const ma5Val = ma5Point ? (ma5Point.data as number) : null
+        const ma20Val = ma20Point ? (ma20Point.data as number) : null
+        let maHtml = ''
+        if (ma5Val !== null) {
+          maHtml += `<div>MA5: <span style="color:#F59E0B">$${ma5Val.toFixed(2)}</span></div>`
+        }
+        if (ma20Val !== null) {
+          maHtml += `<div>MA20: <span style="color:#06B6D4">$${ma20Val.toFixed(2)}</span></div>`
+        }
         return `<div style="font-size:12px">
           <div style="color:#94A3B8;margin-bottom:4px">${candle.name}</div>
           <div>开盘: <span style="color:${color}">$${open.toFixed(2)}</span></div>
           <div>收盘: <span style="color:${color}">$${close.toFixed(2)}</span></div>
           <div>最低: <span style="color:${down}">$${low.toFixed(2)}</span></div>
           <div>最高: <span style="color:${up}">$${high.toFixed(2)}</span></div>
+          ${maHtml}
         </div>`
       },
     },
@@ -247,7 +269,7 @@ function buildCandlestickOption(data: MetalOHLC[], up: string, down: string) {
         animationDelay: (idx: number) => idx * 5,
       },
       {
-        name: 'MA5',
+        name: 'MA5（5日均线）',
         type: 'line',
         data: ma5,
         smooth: useSmooth,
@@ -258,7 +280,7 @@ function buildCandlestickOption(data: MetalOHLC[], up: string, down: string) {
         animationDelay: (idx: number) => idx * 5,
       },
       {
-        name: 'MA20',
+        name: 'MA20（20日均线）',
         type: 'line',
         data: ma20,
         smooth: useSmooth,

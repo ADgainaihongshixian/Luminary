@@ -1,6 +1,8 @@
 import { useState, useRef } from 'react'
 import { exportData } from '@/utils/export'
 import { importData } from '@/utils/import'
+import { downloadImportTemplate } from '@/utils/template'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { useTheme } from '@/hooks/useTheme'
 import { useColorScheme } from '@/hooks/useColorScheme'
 import { useThemeColor, THEME_COLORS } from '@/hooks/useThemeColor'
@@ -21,6 +23,9 @@ import {
   Eye,
   EyeOff,
   Key,
+  FileJson,
+  ChevronDown,
+  HelpCircle,
 } from 'lucide-react'
 
 const THEME_OPTIONS = [
@@ -261,6 +266,143 @@ export function Settings() {
               className="hidden"
             />
           </div>
+
+          <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+            <div>
+              <div className="text-sm font-medium">导入模板</div>
+              <div className="text-muted-foreground text-xs">
+                下载 JSON 模板文件，了解导入数据格式
+              </div>
+            </div>
+            <Button variant="outline" size="sm" onClick={downloadImportTemplate}>
+              <FileJson className="size-3.5" />
+              下载模板
+            </Button>
+          </div>
+
+          <Collapsible>
+            <CollapsibleTrigger className="flex items-center gap-2 w-full p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors text-left">
+              <HelpCircle className="size-4 text-muted-foreground shrink-0" />
+              <div className="flex-1">
+                <div className="text-sm font-medium">字段说明</div>
+                <div className="text-muted-foreground text-xs">了解模板中各字段的含义和取值</div>
+              </div>
+              <ChevronDown className="size-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+            </CollapsibleTrigger>
+            <CollapsibleContent className="overflow-hidden">
+              <div className="p-3 mt-1 rounded-lg bg-muted/20 space-y-4 text-xs">
+                {/* 基金持仓 */}
+                <div>
+                  <h4 className="text-sm font-medium mb-2 text-primary">
+                    基金持仓 (portfolioFunds)
+                  </h4>
+                  <div className="space-y-1.5 text-muted-foreground">
+                    <p>
+                      <span className="text-foreground font-mono">fundCode</span> — 基金代码，如{' '}
+                      <code>110011</code>
+                    </p>
+                    <p>
+                      <span className="text-foreground font-mono">fundName</span> — 基金名称
+                    </p>
+                    <p>
+                      <span className="text-foreground font-mono">fundType</span> — 基金类型：
+                      <code>stock</code>(股票型) / <code>mix</code>(混合型) / <code>bond</code>
+                      (债券型) / <code>monetary</code>(货币型) / <code>index</code>(指数型) /{' '}
+                      <code>qdii</code>(QDII) / <code>other</code>(其他)
+                    </p>
+                    <p>
+                      <span className="text-foreground font-mono">holdingMode</span> — 持仓方式：
+                      <code>amount</code>(按金额) / <code>shares</code>(按份额)
+                    </p>
+                    <p>
+                      <span className="text-foreground font-mono">holdingAmount</span> —
+                      持仓金额（元），按金额持仓时填写
+                    </p>
+                    <p>
+                      <span className="text-foreground font-mono">holdingShares</span> —
+                      持有份额，按份额持仓时填写
+                    </p>
+                    <p>
+                      <span className="text-foreground font-mono">costNav</span> —
+                      买入成本净值，用于计算累计收益，不填可设为 <code>null</code>
+                    </p>
+                    <p>
+                      <span className="text-foreground font-mono">groupId</span> — 所属分组
+                      ID，不分组可设为 <code>null</code>
+                    </p>
+                    <p>
+                      <span className="text-foreground font-mono">remark</span> — 备注
+                    </p>
+                  </div>
+                </div>
+
+                {/* 基金分组 */}
+                <div>
+                  <h4 className="text-sm font-medium mb-2 text-primary">基金分组 (fundGroups)</h4>
+                  <div className="space-y-1.5 text-muted-foreground">
+                    <p>
+                      <span className="text-foreground font-mono">id</span> —
+                      分组唯一标识，基金持仓中 <code>groupId</code> 引用此值
+                    </p>
+                    <p>
+                      <span className="text-foreground font-mono">name</span> —
+                      分组名称，如"稳健型"、"激进型"
+                    </p>
+                  </div>
+                </div>
+
+                {/* 价格预警 */}
+                <div>
+                  <h4 className="text-sm font-medium mb-2 text-primary">价格预警 (priceAlerts)</h4>
+                  <div className="space-y-1.5 text-muted-foreground">
+                    <p>
+                      <span className="text-foreground font-mono">assetType</span> — 资产类型：
+                      <code>metal</code>(贵金属) / <code>fund</code>(基金)
+                    </p>
+                    <p>
+                      <span className="text-foreground font-mono">assetCode</span> —
+                      资产代码：贵金属填 <code>XAU</code>(黄金) / <code>XAG</code>(白银) /{' '}
+                      <code>XPT</code>(铂金)；基金填基金代码
+                    </p>
+                    <p>
+                      <span className="text-foreground font-mono">assetName</span> — 显示名称
+                    </p>
+                    <p>
+                      <span className="text-foreground font-mono">targetPrice</span> — 目标价格
+                    </p>
+                    <p>
+                      <span className="text-foreground font-mono">priceUnit</span> — 价格单位，如{' '}
+                      <code>USD/oz</code>(美元/盎司) / <code>元</code>
+                    </p>
+                    <p>
+                      <span className="text-foreground font-mono">status</span> — 状态：
+                      <code>active</code>(生效中) / <code>triggered</code>(已触发)
+                    </p>
+                  </div>
+                </div>
+
+                {/* 通用字段 */}
+                <div>
+                  <h4 className="text-sm font-medium mb-2 text-primary">通用字段</h4>
+                  <div className="space-y-1.5 text-muted-foreground">
+                    <p>
+                      <span className="text-foreground font-mono">id</span> —
+                      唯一标识，可用任意不重复的字符串（建议用 UUID）
+                    </p>
+                    <p>
+                      <span className="text-foreground font-mono">sortOrder</span> —
+                      排序序号，数字越小越靠前
+                    </p>
+                    <p>
+                      <span className="text-foreground font-mono">createdAt</span> /{' '}
+                      <span className="text-foreground font-mono">updatedAt</span> —
+                      创建/更新时间戳（毫秒），可填当前时间
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
 
           {importStatus === 'success' && (
             <div className="flex items-center gap-2 p-3 rounded-lg bg-up/10 border border-up/30 text-up text-sm">
