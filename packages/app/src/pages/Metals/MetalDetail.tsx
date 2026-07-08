@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useParams } from 'react-router-dom'
-import type { MetalSymbol, MetalOHLC } from '@fund-monitor/shared'
+import type { MetalSymbol } from '@fund-monitor/shared'
 import { METALS, DEFAULT_METAL_SYMBOLS, usdOzToCnyGram } from '@fund-monitor/shared'
-import { getMetalPrices, getMetalHistory } from '@fund-monitor/data-service'
+import { getMetalHistory } from '@fund-monitor/data-service'
+import { useMetalPrices } from '@/hooks/useMetalPrices'
 import { useExchangeRate } from '@/hooks/useExchangeRate'
+import { useQuery } from '@tanstack/react-query'
 import { MetalKlineChart } from '@/components/charts/MetalKlineChart'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
@@ -16,7 +18,8 @@ import {
 } from '@/components/ui/table'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Progress } from '@/components/ui/progress'
-import { TrendingUp, TrendingDown, Calculator } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { TrendingUp, TrendingDown, Calculator, RefreshCw } from 'lucide-react'
 import { useColorScheme } from '@/hooks/useColorScheme'
 import { Input } from '@/components/ui/input'
 import { PageContainer } from '@/components/PageContainer'
@@ -30,6 +33,12 @@ const TIME_RANGES = [
   { label: '1年', value: '1Y' },
 ]
 
+/** 判断是否为周末（伦敦金市场休市） */
+function isWeekend() {
+  const day = new Date().getDay()
+  return day === 0 || day === 6
+}
+
 export function MetalDetail() {
   const { symbol } = useParams<{ symbol: string }>()
   const metalSymbol = (symbol?.toUpperCase() ?? 'XAU') as MetalSymbol
@@ -38,36 +47,39 @@ export function MetalDetail() {
   const { colorScheme } = useColorScheme()
   const usdCnyRate = exchangeRate?.rate ?? 7.18
 
-  const [range, setRange] = useState('1M')
-  const [ohlcData, setOhlcData] = useState<MetalOHLC[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [currentPrice, setCurrentPrice] = useState<number | null>(null)
-  const [high52w, setHigh52w] = useState(0)
-  const [low52w, setLow52w] = useState(0)
-
+  const [range, setRange] = useState('1D')
   // 换算器状态
   const [gramInput, setGramInput] = useState('10')
 
-  useEffect(() => {
-    if (!metalSymbol || !DEFAULT_METAL_SYMBOLS.includes(metalSymbol)) return
-    setIsLoading(true)
+  const weekend = isWeekend()
 
-    getMetalPrices([metalSymbol]).then((prices) => {
-      const p = prices[0]
-      if (p) setCurrentPrice(p.price)
-    })
+  // 实时价格：复用 useMetalPrices，共享 30s 自动刷新（useMetalPrices 内部已有轮询）
+  const { prices, refresh: refreshPrices } = useMetalPrices()
+  const currentPrice = prices.find((p) => p.symbol === metalSymbol)?.price ?? null
 
-    getMetalHistory(metalSymbol, range).then((data) => {
-      setOhlcData(data)
-      if (data.length > 0) {
-        const highs = data.map((d) => d.high)
-        const lows = data.map((d) => d.low)
-        setHigh52w(Math.max(...highs))
-        setLow52w(Math.min(...lows))
-      }
-      setIsLoading(false)
-    })
-  }, [metalSymbol, range])
+  // 历史数据：TanStack Query 包装，休市时停止轮询
+  const is1D = range === '1D'
+  const {
+    data: ohlcData = [],
+    isLoading,
+    dataUpdatedAt: historyUpdatedAt,
+    refetch: refetchHistory,
+  } = useQuery({
+    queryKey: ['metalHistory', metalSymbol, range],
+    queryFn: () => getMetalHistory(metalSymbol, range),
+    enabled: !!metalSymbol && DEFAULT_METAL_SYMBOLS.includes(metalSymbol),
+    refetchInterval: weekend ? false : is1D ? 1000 * 30 : 1000 * 60 * 5,
+    staleTime: is1D ? 1000 * 25 : 1000 * 60 * 4,
+  })
+
+  // 从历史数据计算价格区间
+  const high52w = ohlcData.length > 0 ? Math.max(...ohlcData.map((d) => d.high)) : 0
+  const low52w = ohlcData.length > 0 ? Math.min(...ohlcData.map((d) => d.low)) : 0
+
+  // 手动刷新：同时更新价格和历史数据
+  const handleRefresh = async () => {
+    await Promise.allSettled([refreshPrices(), refetchHistory()])
+  }
 
   if (!metalInfo) {
     return (
@@ -139,10 +151,29 @@ export function MetalDetail() {
 
       {/* K 线图 / 分时图 */}
       <div className="glass-card p-4 mb-4">
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center justify-between mb-1">
           <h3 className="text-sm font-medium">{chartType === 'line' ? '分时走势' : 'K 线走势'}</h3>
-          {ohlcData.length > 0 && (
-            <span className="text-xs text-muted-foreground">数据来源：新浪财经</span>
+          <div className="flex items-center gap-2">
+            {ohlcData.length > 0 && (
+              <span className="text-xs text-muted-foreground">数据来源：新浪财经</span>
+            )}
+            <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isLoading}>
+              <RefreshCw className={`size-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+              刷新
+            </Button>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 text-muted-foreground text-xs mb-2">
+          {weekend ? (
+            <span>⚠️ 周末休市，显示上一交易日数据</span>
+          ) : (
+            <>
+              <RefreshCw className="size-3 animate-spin" style={{ animationDuration: '3s' }} />
+              <span>每 {is1D ? '30 秒' : '5 分钟'}自动刷新</span>
+            </>
+          )}
+          {historyUpdatedAt > 0 && (
+            <span>· 更新于 {new Date(historyUpdatedAt).toLocaleTimeString('zh-CN')}</span>
           )}
         </div>
         {isLoading ? (
